@@ -50,7 +50,7 @@ func TestParseFromEnv_Ignore(t *testing.T) {
 	testFlag(t, have, 15)
 }
 
-func mkFlagSet(t *testing.T, s string, opts ...Option) (*flag.FlagSet, *int) {
+func mkFlagSet(t *testing.T, s string) (*flag.FlagSet, *int) {
 	t.Helper()
 	if err := os.Setenv(envName("int"), s); err != nil {
 		t.Fatal(err)

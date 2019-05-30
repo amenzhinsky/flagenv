@@ -14,7 +14,7 @@ if s := os.Getenv("TIMEOUT"); s != "" &&
 	timeoutFlag != 10 { // silly way to detect unset flags
 	timeout, err := strconv.ParseUint(s, 10, 0)
 	if err != nil {
-		return fmt.Errorf("infalid value %q for flag -%s [$%s]: %s",
+		return fmt.Errorf("invalid value %q for flag -%s [$%s]: %s",
 			s, "timeout", "TIMEOUT", err,
 		)
 	}
@@ -22,7 +22,7 @@ if s := os.Getenv("TIMEOUT"); s != "" &&
 }
 ```
 
-Simply after registering all necessary flags call `flagenv.Parse()` function that wraps around `flag.Parse()`:
+Simply after registering all necessary flags call `flagenv.Parse()` function that wraps around `flag.Parse()` enabling environment variables as fallback values for all previously registered flags:
 
 ```go
 flag.UintVar(&timeoutFlag, "timeout", 10, "connection timeout")
@@ -41,7 +41,7 @@ Usage of main:
 
 ## Configuration
 
-In case you're using short flag names you may employ `WithMapFunc` to override environment variable names with longer ones:
+In case you're using short flag names you may employ `WithMap` option to override environment variable names with more descriptive alternatives:
 
 ```go
 flag.StringVar(&addrFlag, "a", ":8080", "address to connect to")
@@ -53,9 +53,12 @@ flagenv.Parse(flagenv.WithMap(func(name string) string {
 		return "ADDR"
 	case "t":
 		return "TIMEOUT"
+	case "f":
+		// ignore '-f' flag
+		return "" 
 	default:
-		// disable env bindings for other flags
-		return ""
+		// fall back to the standard behaviour
+		return strings.ToUpper(name)
 	}
 }))
 ```

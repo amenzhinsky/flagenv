@@ -4,7 +4,7 @@ Environment variables support for golang's `flag` package.
 
 ## Usage
 
-If you're tired of writing something like this in each project:
+Tired of writing something like this in each project:
 
 ```go
 flag.UintVar(&timeoutFlag, "timeout", 10, "connection timeout in seconds [$TIMEOUT]")
@@ -22,14 +22,14 @@ if s := os.Getenv("TIMEOUT"); s != "" &&
 }
 ```
 
-Simply after registering all necessary flags call `flagenv.Parse()` function that wraps around `flag.Parse()` enabling environment variables as fallback values for all previously registered flags:
+Simply call `flagenv.Parse()` function after registering all necessary flags that wraps around `flag.Parse()` enabling environment variables as fallback values:
 
 ```go
 flag.UintVar(&timeoutFlag, "timeout", 10, "connection timeout")
 flagenv.Parse()
 ```
 
-Environment variables are only applied to the flags that are not set through the command-line arguments.
+Environment is only applied to the flags that are not set through the command-line arguments.
 
 It also adds environment variable names to each flag in the help message:
 

@@ -39,4 +39,23 @@ Usage of main:
         connection timeout [$TIMEOUT] (default 10)
 ```
 
-For using the package with `*flag.FlagSet` see `ParseWithEnv` function that supports mapping customization of flag names to env names.
+## Configuration
+
+In case you're using short flag names you may employ `WithMapFunc` to override environment variable names with longer ones:
+
+```go
+flag.StringVar(&addrFlag, "a", ":8080", "address to connect to")
+flag.UintVar(&timeoutFlag, "t", 0, "connection timeout")
+flag.BoolVar(&forceFlag, "f", false, "force the action")
+flagenv.Parse(flagenv.WithMap(func(name string) string {
+	switch name {
+	case "a":
+		return "ADDR"
+	case "t":
+		return "TIMEOUT"
+	default:
+		// disable env bindings for other flags
+		return ""
+	}
+}))
+```

@@ -7,15 +7,31 @@ import (
 	"strings"
 )
 
+// Option is a parser configuration option.
+type Option func(*parser)
+
+// WithMap sets callback that maps flag names to environment variable names.
+func WithMap(fn MapFunc) Option {
+	return func(p *parser) {
+		p.mapping = fn
+	}
+}
+
 // Parse should be used in place of `flag.Parse()` to add support of
 // environment variables to the default command-line flags parser.
-func Parse() {
+func Parse(opts ...Option) {
 	// CommandLine is set for ExitOnError, no need to handle errors.
-	_ = ParseWithEnv(flag.CommandLine, os.Args[1:], nil)
+	_ = ParseWithEnv(flag.CommandLine, os.Args[1:], opts...)
+}
+
+type parser struct {
+	mapping MapFunc
 }
 
 // MapFunc is mapping function from flag name to environment variable name.
-type MapFunc func(s string) string
+//
+// If returned value is an empty string the flag is ignored.
+type MapFunc func(name string) string
 
 // ParseWithEnv enables environment variables support for the given flag set.
 // It adds environment variable names to each value usage string.
@@ -23,21 +39,26 @@ type MapFunc func(s string) string
 // command-line arguments and the value is not empty.
 //
 // Panics when fs is already parsed.
-//
-// If fn is nil `strings.ToUpper` is used.
-func ParseWithEnv(fs *flag.FlagSet, argv []string, fn MapFunc) error {
+func ParseWithEnv(fs *flag.FlagSet, argv []string, opts ...Option) error {
 	if fs.Parsed() {
 		panic("already parsed")
 	}
-	if fn == nil {
-		fn = strings.ToUpper
+
+	p := &parser{mapping: strings.ToUpper}
+	for _, opt := range opts {
+		opt(p)
 	}
 
 	// collect all the flags before parsing and remove ones that have been set
 	m := map[string]*flag.Flag{}
 	fs.VisitAll(func(f *flag.Flag) {
+		name := p.mapping(f.Name)
+		if name == "" {
+			return
+		}
+
 		m[f.Name] = f
-		f.Usage = f.Usage + " [$" + fn(f.Name) + "]"
+		f.Usage = fmt.Sprintf("%s [$%s]", f.Usage, name)
 	})
 	if err := fs.Parse(argv); err != nil {
 		return err
@@ -49,13 +70,14 @@ func ParseWithEnv(fs *flag.FlagSet, argv []string, fn MapFunc) error {
 	// repeat what `func (f *FlagSet) Parse(arguments []string) error` does,
 	// only display env variable name next to flag name in error messages
 	for _, f := range m {
-		s := os.Getenv(fn(f.Name))
+		name := p.mapping(f.Name)
+		s := os.Getenv(name)
 		if s == "" {
 			continue
 		}
 		if err := f.Value.Set(s); err != nil {
 			err = failf(fs, "invalid value %q for flag -%s [$%s]: %v",
-				s, f.Name, fn(f.Name), err,
+				s, f.Name, name, err,
 			)
 			switch fs.ErrorHandling() {
 			case flag.ContinueOnError:

@@ -10,8 +10,14 @@ Tired of writing something like this in each project:
 flag.UintVar(&timeoutFlag, "timeout", 10, "connection timeout in seconds [$TIMEOUT]")
 flag.Parse()
 
-if s := os.Getenv("TIMEOUT"); s != "" &&
-	timeoutFlag != 10 { // silly way to detect unset flags
+var changed bool
+flag.Visit(func(f *flag.Flag) {
+	if f.Name == "timeout" {
+		changed = true
+	}
+})
+
+if s := os.Getenv("TIMEOUT"); s != "" && !changed { // awkward way to detect unset flags
 	timeout, err := strconv.ParseUint(s, 10, 0)
 	if err != nil {
 		return fmt.Errorf("invalid value %q for flag -%s [$%s]: %s",

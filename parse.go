@@ -28,6 +28,14 @@ type parser struct {
 	mapping MapFunc
 }
 
+// DefaultMap is default variable mapping function,
+// it replaces hyphens with underscores and upper-cases the result.
+//
+// Example: connect-timeout => CONNECT_TIMEOUT.
+var DefaultMap MapFunc = func(name string) string {
+	return strings.ToUpper(strings.Replace(name, "-", "_", -1))
+}
+
 // MapFunc is mapping function from flag name to environment variable name.
 //
 // If returned value is an empty string the flag is ignored.
@@ -44,7 +52,7 @@ func ParseWithEnv(fs *flag.FlagSet, argv []string, opts ...Option) error {
 		panic("already parsed")
 	}
 
-	p := &parser{mapping: strings.ToUpper}
+	p := &parser{mapping: DefaultMap}
 	for _, opt := range opts {
 		opt(p)
 	}

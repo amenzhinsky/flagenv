@@ -4,7 +4,7 @@ Environment variables support for golang's `flag` package.
 
 ## Usage
 
-Tired of writing something like this in each project:
+The library helps to reduce amount of code that's usually written in every command-line application like this:
 
 ```go
 flag.UintVar(&timeoutFlag, "timeout", 10, "connection timeout in seconds [$TIMEOUT]")
@@ -63,8 +63,8 @@ flagenv.Parse(flagenv.WithMap(func(name string) string {
 		// ignore '-f' flag
 		return "" 
 	default:
-		// fall back to the standard behaviour
-		return strings.ToUpper(name)
+		// fall back to the default behaviour
+		return flagenv.DefaultMap(name)
 	}
 }))
 ```

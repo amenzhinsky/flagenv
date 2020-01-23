@@ -36,7 +36,7 @@ var DefaultMap MapFunc = func(name string) string {
 	return strings.ToUpper(strings.Replace(name, "-", "_", -1))
 }
 
-// MapFunc is mapping function from flag name to environment variable name.
+// MapFunc maps flag names to environment variable names.
 //
 // If returned value is an empty string the flag is ignored.
 type MapFunc func(name string) string

@@ -1,23 +1,26 @@
 # flagenv
 
-Environment variables support for golang's `flag` package.
+Environment variables support for the standard `flag` package.
 
 ## Usage
 
-The library helps to reduce amount of code that's usually written in every command-line application like this:
+The library helps to reduce amount of code usually written to use environment variables as fallbacks for command-line options:
 
 ```go
 flag.UintVar(&timeoutFlag, "timeout", 10, "connection timeout in seconds [$TIMEOUT]")
 flag.Parse()
 
-var changed bool
-flag.Visit(func(f *flag.Flag) {
-	if f.Name == "timeout" {
-		changed = true
-	}
-})
+flagIsSet := func(name string) bool {
+	var set bool
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "timeout" {
+			set = true
+		}
+	})
+	return set
+}
 
-if s := os.Getenv("TIMEOUT"); s != "" && !changed { // awkward way to detect unset flags
+if s := os.Getenv("TIMEOUT"); s != "" && !flagIsSet("timeout") { // awkward way to detect unset flags
 	timeout, err := strconv.ParseUint(s, 10, 0)
 	if err != nil {
 		return fmt.Errorf("invalid value %q for flag -%s [$%s]: %s",
@@ -28,7 +31,7 @@ if s := os.Getenv("TIMEOUT"); s != "" && !changed { // awkward way to detect uns
 }
 ```
 
-Simply call `flagenv.Parse()` function after registering all necessary flags that wraps around `flag.Parse()` enabling environment variables as fallback values:
+Simply call `flagenv.Parse()` function after registering all necessary flags that wraps around `flag.Parse()`:
 
 ```go
 flag.UintVar(&timeoutFlag, "timeout", 10, "connection timeout")
@@ -68,3 +71,7 @@ flagenv.Parse(flagenv.WithMap(func(name string) string {
 	}
 }))
 ```
+
+## Contributing
+
+All contributions are welcome. Please fill in an issue before submitting pull requests.

@@ -17,6 +17,15 @@ func WithMap(fn MapFunc) Option {
 	}
 }
 
+// WithGetenv changes the default function that retrieves environment variables .
+//
+// Default is os.Getenv.
+func WithGetenv(fn func(key string) string) Option {
+	return func(p *parser) {
+		p.getenv = fn
+	}
+}
+
 // Parse should be used in place of `flag.Parse()` to add support of
 // environment variables to the default command-line flags parser.
 func Parse(opts ...Option) {
@@ -26,6 +35,7 @@ func Parse(opts ...Option) {
 
 type parser struct {
 	mapping MapFunc
+	getenv  func(key string) string
 }
 
 // DefaultMap is default variable mapping function,
@@ -52,7 +62,7 @@ func ParseWithEnv(fs *flag.FlagSet, argv []string, opts ...Option) error {
 		panic("already parsed")
 	}
 
-	p := &parser{mapping: DefaultMap}
+	p := &parser{mapping: DefaultMap, getenv: os.Getenv}
 	for _, opt := range opts {
 		opt(p)
 	}
@@ -79,7 +89,7 @@ func ParseWithEnv(fs *flag.FlagSet, argv []string, opts ...Option) error {
 	// only display env variable name next to flag name in error messages
 	for _, f := range m {
 		name := p.mapping(f.Name)
-		s := os.Getenv(name)
+		s := p.getenv(name)
 		if s == "" {
 			continue
 		}

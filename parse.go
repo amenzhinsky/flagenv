@@ -17,12 +17,12 @@ func WithMap(fn MapFunc) Option {
 	}
 }
 
-// WithGetenv changes the default function that retrieves environment variables .
+// WithLookupEnv changes the default function that retrieves environment variables.
 //
-// Default is os.Getenv.
-func WithGetenv(fn func(key string) string) Option {
+// Default is os.LookupEnv.
+func WithLookupEnv(fn func(key string) (string, bool)) Option {
 	return func(p *parser) {
-		p.getenv = fn
+		p.lookup = fn
 	}
 }
 
@@ -35,7 +35,7 @@ func Parse(opts ...Option) {
 
 type parser struct {
 	mapping MapFunc
-	getenv  func(key string) string
+	lookup  func(key string) (string, bool)
 }
 
 // DefaultMap is default variable mapping function,
@@ -62,7 +62,7 @@ func ParseWithEnv(fs *flag.FlagSet, argv []string, opts ...Option) error {
 		panic("already parsed")
 	}
 
-	p := &parser{mapping: DefaultMap, getenv: os.Getenv}
+	p := &parser{mapping: DefaultMap, lookup: os.LookupEnv}
 	for _, opt := range opts {
 		opt(p)
 	}
@@ -73,6 +73,10 @@ func ParseWithEnv(fs *flag.FlagSet, argv []string, opts ...Option) error {
 		name := p.mapping(f.Name)
 		if name == "" {
 			return
+		}
+		if existing, ok := m[name]; ok {
+			panic(fmt.Sprintf("conflicting %q environment variable for -%s and -%s flags",
+				name, existing.Name, f.Name))
 		}
 
 		m[f.Name] = f
@@ -89,8 +93,8 @@ func ParseWithEnv(fs *flag.FlagSet, argv []string, opts ...Option) error {
 	// only display env variable name next to flag name in error messages
 	for _, f := range m {
 		name := p.mapping(f.Name)
-		s := p.getenv(name)
-		if s == "" {
+		s, ok := p.lookup(name)
+		if !ok {
 			continue
 		}
 		if err := f.Value.Set(s); err != nil {

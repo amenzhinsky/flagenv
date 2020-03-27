@@ -102,6 +102,18 @@ func TestAlreadyParsed(t *testing.T) {
 	}
 }
 
+func TestDefaultMap(t *testing.T) {
+	for s, want := range map[string]string{
+		"foo-bar": "FOO_BAR",
+		"foo.bar": "FOO_BAR",
+		"%$#@":    "____",
+	} {
+		if have := DefaultMap(s); have != want {
+			t.Errorf("DefaultMap(%q) = %q, wat %q", s, have, want)
+		}
+	}
+}
+
 func withEnv(env map[string]string) Option {
 	return WithLookupEnv(func(key string) (string, bool) {
 		v, ok := env[key]

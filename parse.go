@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -42,8 +43,13 @@ type parser struct {
 // it replaces hyphens with underscores and upper-cases the result.
 //
 // Example: connect-timeout => CONNECT_TIMEOUT.
-var DefaultMap MapFunc = func(name string) string {
-	return strings.ToUpper(strings.Replace(name, "-", "_", -1))
+var DefaultMap = newDefaultMap()
+
+func newDefaultMap() MapFunc {
+	re := regexp.MustCompile("[^a-zA-Z0-9_]")
+	return func(name string) string {
+		return strings.ToUpper(re.ReplaceAllString(name, "_"))
+	}
 }
 
 // MapFunc maps flag names to environment variable names.
